@@ -195,14 +195,61 @@ if state['evaluation'] and st.session_state.app_step == "evaluate":
     st.header("📊 Evaluation Results")
     st.success(state['evaluation'])
     
-    # Action Menu
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🚀 Deep Dive into this Topic"):
-            with st.spinner("Generating advanced content..."):
-                state['deep_dive'] = deep_dive_agent(state['selected_topic'])
-    
-    # Show Deep Dive if it exists
+    # Show Deep Dive if it was previously generated
     if state['deep_dive']:
         st.markdown("### 🚀 Deep Dive")
         st.write(state['deep_dive'])
+
+    st.markdown("---")
+    st.subheader("🔽 Options:")
+    
+    # The Interactive Menu
+    next_action = st.radio(
+        "What would you like to do next?",
+        options=[
+            "1. Deep dive into this topic",
+            "2. Choose another topic from current syllabus",
+            "3. Start a completely new syllabus",
+            "4. Exit"
+        ],
+        label_visibility="collapsed"
+    )
+    
+    if st.button("👉 Proceed"):
+        
+        # Choice 1: Deep Dive
+        if next_action.startswith("1"):
+            with st.spinner("Generating advanced content..."):
+                state['deep_dive'] = deep_dive_agent(state['selected_topic'])
+                st.rerun()
+                
+        # Choice 2: Back to current topic list
+        elif next_action.startswith("2"):
+            reset_topic_state() # Clears the quiz/explanation
+            st.session_state.app_step = "select_topic"
+            st.rerun()
+            
+        # Choice 3: Hard reset for a new syllabus
+        elif next_action.startswith("3"):
+            # Wipe the entire state clean
+            st.session_state.tutor_state = TutorState(
+                syllabus="", topics="", topic_list=[], selected_topic="",
+                explanation="", quiz="", answer_key="", user_answer="", evaluation="", deep_dive=""
+            )
+            st.session_state.app_step = "plan"
+            st.rerun()
+            
+        # Choice 4: Exit App
+        elif next_action.startswith("4"):
+            # Web apps don't "close" like terminal apps, so we clear the screen and show a message
+            st.session_state.app_step = "exit"
+            st.rerun()
+
+# --------------------------------------------------
+# EXIT SCREEN
+# --------------------------------------------------
+if st.session_state.app_step == "exit":
+    st.empty() # Clears everything above
+    st.title("👋 Goodbye!")
+    st.info("Thank you for using the AI Syllabus Tutor. You can close this tab now, or refresh the page to start over.")
+    st.stop()
